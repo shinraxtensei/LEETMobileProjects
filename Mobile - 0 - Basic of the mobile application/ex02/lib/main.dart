@@ -45,13 +45,22 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final List<List<String>> _buttonRows = [
+  final List<List<String>> _buttonRowsPortrait = [
     ['AC', 'C', '%', '/'],
     ['7', '8', '9', 'x'],
     ['4', '5', '6', '-'],
     ['1', '2', '3', '+'],
     ['.', '0', '=', 'x']
   ];
+
+  final List<List<String>> _buttonRowsLandscape = [
+    ['AC', '7', '4', '1', '.'],
+    ['C', '8', '5', '2', '0'],
+    ['%', '9', '6', '3', '='],
+    ['/', 'x', '-', '+', 'x']
+  ];
+
+  late List<List<String>> _buttonRows;
 
   String displayText = '';
   String resultText = '';
@@ -92,10 +101,13 @@ class _MyHomePageState extends State<MyHomePage> {
         displayText += '.';
       }
 
-      if (_isNumber(buttonText) || buttonText == '=' || buttonText == 'C' || buttonText == 'AC') {
-      if (buttonText == '=') clickedEqual = true;
+      if (_isNumber(buttonText) ||
+          buttonText == '=' ||
+          buttonText == 'C' ||
+          buttonText == 'AC') {
+        if (buttonText == '=') clickedEqual = true;
 
-      _calculateResult();
+        _calculateResult();
       }
     });
   }
@@ -131,6 +143,7 @@ class _MyHomePageState extends State<MyHomePage> {
     return text == '+' || text == '-' || text == 'x' || text == '/';
   }
 
+  // ignore: unused_element
   void _onButtonPressed(String buttonText) {
     debugPrint('Button pressed: $buttonText');
     _parseInput(buttonText);
@@ -141,110 +154,118 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color(0xFF4B5EFC),
-        title: const Text('Calculator'),
+        title: const Text('asd'),
       ),
-      body: Center(
-          //calculator
-          child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          //another column for the display
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 2000),
-            transitionBuilder: (child, animation) {
-              return FadeTransition(
-                opacity: animation,
-                child: child,
-              );
-            },
-            child: Column(
-              children: [
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Text(
-                      clickedEqual
-                          ? resultText.toString()
-                          : displayText.toString(),
-                      style: const TextStyle(fontSize: 50),
-                    ),
-                  ),
-                ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Text(
-                      clickedEqual
-                          ? ''
-                          : resultText.toString() == '0'
-                              ? ''
-                              : resultText.toString(),
-                      style: const TextStyle(fontSize: 50, color: Colors.grey),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          debugPrint('Max Width: ${constraints.maxWidth}');
+          debugPrint('Max Height: ${constraints.maxHeight}');
+          // ignore: unused_local_variable
+          double buttonFontSize = constraints.maxWidth * 0.06;
+          double displayFontSize = constraints.maxWidth * 0.05;
+          // ignore: unused_local_variable
+          double buttonPadding = constraints.maxWidth * 0.003;
 
-          //number pad
-          Container(
-            padding: const EdgeInsets.only(top: 30),
-            decoration: BoxDecoration(
-              // color 0xFF27292E
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(50),
-                topRight: Radius.circular(50),
+          if (constraints.maxWidth > constraints.maxHeight) {
+            _buttonRows = _buttonRowsLandscape;
+          } else {
+            _buttonRows = _buttonRowsPortrait;
+          }
+
+          return SingleChildScrollView(
+            child: Center(
+              //calculator
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  //another column for the display
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 2000),
+                    transitionBuilder: (child, animation) {
+                      return FadeTransition(
+                        opacity: animation,
+                        child: child,
+                      );
+                    },
+                    child: Column(
+                      children: [
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: constraints.maxWidth * 0.05),
+                            child: Text(
+                              clickedEqual
+                                  ? resultText.toString()
+                                  : displayText.toString(),
+                              style: TextStyle(fontSize: displayFontSize),
+                            ),
+                          ),
+                        ),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: constraints.maxWidth * 0.05),
+                            child: Text(
+                              clickedEqual
+                                  ? ''
+                                  : resultText.toString() == '0'
+                                      ? ''
+                                      : resultText.toString(),
+                              style: TextStyle(
+                                  fontSize: displayFontSize,
+                                  color: Colors.grey),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  //number pad
+                  Container(
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(constraints.maxWidth * 0.1),
+                        topRight: Radius.circular(constraints.maxWidth * 0.1),
+                      ),
+                    ),
+                    child: GridView.builder(
+                      physics: const NeverScrollableScrollPhysics(),
+                      // shrinkWrap: true,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: _buttonRows[0].length,
+                      ),
+                      itemCount: _buttonRows.length * _buttonRows[0].length,
+                      itemBuilder: (context, index) {
+                        final row = index ~/ _buttonRows[0].length;
+                        final col = index % _buttonRows[0].length;
+
+                        // Check if current button is an operator
+                        // ignore: unused_local_variable
+                        final isOperator = col == _buttonRows[0].length - 1;
+
+                        // Check if current button is in the first row or last column
+                        // ignore: unused_local_variable
+                        final isFirstRow = row == 0;
+                        // ignore: unused_local_variable
+                        final isLastColumn = col == _buttonRows[0].length - 1;
+
+                        return const Placeholder(
+                          strokeWidth: 0,
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
-            child: GridView.builder(
-              shrinkWrap: true,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 4,
-                mainAxisSpacing: 10,
-                crossAxisSpacing: 20,
-              ),
-              itemCount: _buttonRows.length * _buttonRows[0].length,
-              itemBuilder: (context, index) {
-                final row = index ~/ _buttonRows[0].length;
-                final col = index % _buttonRows[0].length;
-
-                // Check if current button is an operator
-                final isOperator = col == _buttonRows[0].length - 1;
-
-                // Check if current button is in the first row or last column
-                final isFirstRow = row == 0;
-                final isLastColumn = col == _buttonRows[0].length - 1;
-
-                return ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isFirstRow || isLastColumn
-                        ? Theme.of(context).colorScheme.surface
-                        : Theme.of(context).colorScheme.background,
-                    padding: const EdgeInsets.all(20),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(50),
-                    ),
-                  ),
-                  onPressed: () => _onButtonPressed(_buttonRows[row][col]),
-                  child: Text(
-                    _buttonRows[row][col],
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontSize: isOperator ? 30 : 20,
-                      fontWeight:
-                          isOperator ? FontWeight.bold : FontWeight.normal,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
-      )),
+          );
+        },
+      ),
     );
   }
 }
